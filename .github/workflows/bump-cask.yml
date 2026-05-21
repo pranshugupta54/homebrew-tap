@@ -1,0 +1,46 @@
+name: Bump cask
+
+# Every 12 hours, check for a newer Hertz release and update the cask.
+# Self-contained — edits this repo with the built-in GITHUB_TOKEN.
+on:
+  schedule:
+    - cron: "0 */12 * * *"
+  workflow_dispatch:
+
+jobs:
+  bump:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Bump the Hertz cask if a newer release exists
+        run: |
+          set -euo pipefail
+          repo="pranshugupta54/hertz"
+
+          latest=$(curl -fsSL "https://api.github.com/repos/$repo/releases/latest" \
+            | grep '"tag_name"' | head -1 \
+            | sed -E 's/.*"tag_name": *"v?([^"]+)".*/\1/')
+          current=$(grep -E 'version "' Casks/hertz.rb | head -1 \
+            | sed -E 's/.*version "([^"]+)".*/\1/')
+
+          if [ -z "$latest" ] || [ "$latest" = "$current" ]; then
+            echo "Cask already at $current — nothing to do."
+            exit 0
+          fi
+
+          echo "Bumping cask: $current -> $latest"
+          curl -fsSL "https://github.com/$repo/releases/download/v$latest/Hertz.app.zip" \
+            -o /tmp/Hertz.app.zip
+          sha=$(sha256sum /tmp/Hertz.app.zip | awk '{print $1}')
+
+          sed -i -e "s/version \"$current\"/version \"$latest\"/" \
+                 -e "s/sha256 \"[a-f0-9]*\"/sha256 \"$sha\"/" Casks/hertz.rb
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add Casks/hertz.rb
+          git commit -m "hertz $latest"
+          git push

@@ -1,6 +1,6 @@
 cask "hertz" do
-  version "0.1.0"
-  sha256 "5daf576cf585a7b3073c738e211126d32db98dc62c6c3f1f176def7d66c62743"
+  version "0.1.1"
+  sha256 "d66ee3985d450eeba3e775764225406f48a04543fcefdb05a17bf23b2afd271b"
 
   url "https://github.com/pranshugupta54/hertz/releases/download/v#{version}/Hertz.app.zip"
   name "Hertz"
